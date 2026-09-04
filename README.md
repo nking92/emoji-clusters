@@ -55,7 +55,13 @@ for cluster in split("Hi 👍🏽! 🇺🇸🇬🇧"):
 
 classify("🇺🇸")   # Kind.FLAG
 classify("👨‍👩‍👧‍👦")  # Kind.ZWJ_SEQUENCE
+
+truncate("👨‍👩‍👧‍👦!", 1)   # "👨‍👩‍👧‍👦" - not "👨"
+truncate("🇺🇸🇬🇧", 1)      # "🇺🇸" - not the "🇺" half of a flag
 ```
+
+`truncate(text, max_clusters)` keeps at most `max_clusters` clusters,
+cutting between clusters rather than in the middle of one.
 
 `split` never separates the code points of a single sequence across two
 clusters, and joining `cluster.text` for every cluster back together

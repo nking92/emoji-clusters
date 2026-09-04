@@ -167,6 +167,26 @@ def split(text: str) -> List[Cluster]:
     return list(iter_clusters(text))
 
 
+def truncate(text: str, max_clusters: int) -> str:
+    """Truncate text to at most max_clusters clusters, without cutting a
+    flag, keycap, ZWJ sequence, or other multi-code-point cluster in half.
+
+    Raises ValueError if max_clusters is negative.
+    """
+    if max_clusters < 0:
+        raise ValueError(f"max_clusters must be >= 0, got {max_clusters}")
+    if max_clusters == 0:
+        return ""
+    parts = []
+    count = 0
+    for cluster in iter_clusters(text):
+        if count >= max_clusters:
+            break
+        parts.append(cluster.text)
+        count += 1
+    return "".join(parts)
+
+
 def classify(text: str) -> Kind:
     """Classify a string that is expected to already be a single cluster.
 

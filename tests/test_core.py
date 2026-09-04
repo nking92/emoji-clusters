@@ -152,5 +152,45 @@ class ClassifyTests(unittest.TestCase):
             classify("")
 
 
+class TruncateTests(unittest.TestCase):
+    def test_truncate_does_not_split_a_flag(self):
+        from emoji_clusters import truncate
+
+        self.assertEqual(truncate(FLAG_US + FLAG_GB, 1), FLAG_US)
+
+    def test_truncate_does_not_split_a_zwj_sequence(self):
+        from emoji_clusters import truncate
+
+        family = MAN + ZWJ + WOMAN + ZWJ + GIRL + ZWJ + BOY
+        self.assertEqual(truncate(family + "!", 1), family)
+
+    def test_truncate_zero_returns_empty_string(self):
+        from emoji_clusters import truncate
+
+        self.assertEqual(truncate(FLAG_US, 0), "")
+
+    def test_truncate_negative_raises(self):
+        from emoji_clusters import truncate
+
+        with self.assertRaises(ValueError):
+            truncate("abc", -1)
+
+    def test_truncate_beyond_length_returns_full_text(self):
+        from emoji_clusters import truncate
+
+        self.assertEqual(truncate("abc", 100), "abc")
+
+    def test_truncate_empty_string(self):
+        from emoji_clusters import truncate
+
+        self.assertEqual(truncate("", 5), "")
+
+    def test_truncate_counts_clusters_not_code_points(self):
+        from emoji_clusters import truncate
+
+        text = "Hi " + THUMBS_UP + MEDIUM_SKIN_TONE + "!"
+        self.assertEqual(truncate(text, 4), "Hi " + THUMBS_UP + MEDIUM_SKIN_TONE)
+
+
 if __name__ == "__main__":
     unittest.main()
