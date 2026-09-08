@@ -67,6 +67,23 @@ cutting between clusters rather than in the middle of one.
 clusters, and joining `cluster.text` for every cluster back together
 always reproduces the original string exactly.
 
+```python
+from emoji_clusters import count_clusters, cluster_boundaries, cluster_index_at
+
+count_clusters("👨‍👩‍👧‍👦🇺🇸")   # 2 - not len(), which counts code points
+
+cluster_boundaries("🇺🇸🇬🇧")   # [0, 2, 4] - code point offsets between clusters
+
+cluster_index_at("Hi 🇺🇸", 4)   # 3 - which cluster owns code point index 4
+```
+
+`count_clusters` is the cheap check when you only need a length, since it
+skips building the `Cluster` objects `split` allocates. `cluster_boundaries`
+gives slice-ready offsets for every cluster in one pass. `cluster_index_at`
+answers "which cluster is this code point index inside of", for when an
+index comes from somewhere else (a regex match, a cursor position) and
+needs mapping back onto cluster boundaries.
+
 ### Kinds
 
 | Kind | Example | Structure |

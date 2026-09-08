@@ -192,5 +192,83 @@ class TruncateTests(unittest.TestCase):
         self.assertEqual(truncate(text, 4), "Hi " + THUMBS_UP + MEDIUM_SKIN_TONE)
 
 
+class CountClustersTests(unittest.TestCase):
+    def test_count_matches_split_length(self):
+        from emoji_clusters import count_clusters
+
+        for name, text, expected in CASES:
+            with self.subTest(name=name):
+                self.assertEqual(count_clusters(text), len(expected))
+
+    def test_count_empty_string(self):
+        from emoji_clusters import count_clusters
+
+        self.assertEqual(count_clusters(""), 0)
+
+
+class ClusterBoundariesTests(unittest.TestCase):
+    def test_boundaries_empty_string(self):
+        from emoji_clusters import cluster_boundaries
+
+        self.assertEqual(cluster_boundaries(""), [0])
+
+    def test_boundaries_slice_reproduces_each_cluster(self):
+        from emoji_clusters import cluster_boundaries
+
+        for name, text, expected in CASES:
+            with self.subTest(name=name):
+                boundaries = cluster_boundaries(text)
+                self.assertEqual(len(boundaries) - 1, len(expected))
+                slices = [
+                    text[a:b] for a, b in zip(boundaries, boundaries[1:])
+                ]
+                self.assertEqual(slices, [c[0] for c in expected])
+
+    def test_boundaries_flag_pair(self):
+        from emoji_clusters import cluster_boundaries
+
+        self.assertEqual(cluster_boundaries(FLAG_US + FLAG_GB), [0, 2, 4])
+
+
+class ClusterIndexAtTests(unittest.TestCase):
+    def test_index_within_multi_code_point_cluster(self):
+        from emoji_clusters import cluster_index_at
+
+        text = FLAG_US + FLAG_GB
+        self.assertEqual(cluster_index_at(text, 0), 0)
+        self.assertEqual(cluster_index_at(text, 1), 0)
+        self.assertEqual(cluster_index_at(text, 2), 1)
+        self.assertEqual(cluster_index_at(text, 3), 1)
+
+    def test_index_within_zwj_sequence(self):
+        from emoji_clusters import cluster_index_at
+
+        family = MAN + ZWJ + WOMAN + ZWJ + GIRL + ZWJ + BOY
+        text = "!" + family + "?"
+        self.assertEqual(cluster_index_at(text, 0), 0)
+        for offset in range(1, len(family) + 1):
+            with self.subTest(offset=offset):
+                self.assertEqual(cluster_index_at(text, offset), 1)
+        self.assertEqual(cluster_index_at(text, len(text) - 1), 2)
+
+    def test_index_negative_raises(self):
+        from emoji_clusters import cluster_index_at
+
+        with self.assertRaises(IndexError):
+            cluster_index_at("abc", -1)
+
+    def test_index_out_of_range_raises(self):
+        from emoji_clusters import cluster_index_at
+
+        with self.assertRaises(IndexError):
+            cluster_index_at("abc", 3)
+
+    def test_index_empty_string_raises(self):
+        from emoji_clusters import cluster_index_at
+
+        with self.assertRaises(IndexError):
+            cluster_index_at("", 0)
+
+
 if __name__ == "__main__":
     unittest.main()

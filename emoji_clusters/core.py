@@ -187,6 +187,54 @@ def truncate(text: str, max_clusters: int) -> str:
     return "".join(parts)
 
 
+def count_clusters(text: str) -> int:
+    """Count clusters in text without materializing their Cluster objects.
+
+    Equivalent to len(split(text)) but does not build the intermediate list,
+    so it is the cheaper choice when only a count is needed (e.g. enforcing
+    a length limit before deciding whether to call truncate at all).
+    """
+    return sum(1 for _ in iter_clusters(text))
+
+
+def cluster_boundaries(text: str) -> List[int]:
+    """Return code point offsets marking the start of each cluster.
+
+    The result always starts with 0 and ends with len(text), so it has
+    count_clusters(text) + 1 entries (or exactly [0] for an empty string).
+    Consecutive pairs of offsets are valid slice bounds: text[a:b] for each
+    (a, b) in zip(boundaries, boundaries[1:]) reproduces one cluster's text.
+    """
+    boundaries = [0]
+    offset = 0
+    for cluster in iter_clusters(text):
+        offset += len(cluster.text)
+        boundaries.append(offset)
+    return boundaries
+
+
+def cluster_index_at(text: str, code_point_index: int) -> int:
+    """Return the index of the cluster containing a given code point offset.
+
+    This is the lookup a caller needs after getting a code-point index from
+    somewhere else (a regex match, a cursor position) and wanting to know
+    which cluster it falls inside, without re-splitting the whole string by
+    hand. Raises IndexError if code_point_index is out of range for text.
+    """
+    if code_point_index < 0 or code_point_index >= len(text):
+        raise IndexError(
+            f"code point index {code_point_index} out of range for text of length {len(text)}"
+        )
+    offset = 0
+    for i, cluster in enumerate(iter_clusters(text)):
+        offset += len(cluster.text)
+        if code_point_index < offset:
+            return i
+    raise IndexError(
+        f"code point index {code_point_index} out of range for text of length {len(text)}"
+    )
+
+
 def classify(text: str) -> Kind:
     """Classify a string that is expected to already be a single cluster.
 
